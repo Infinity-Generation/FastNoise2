@@ -167,7 +167,8 @@ void NoiseToolApp::drawEvent()
         GL::Renderer::enable( GL::Renderer::Feature::FaceCulling );
     }
 
-    mNodeEditor.Draw( mCamera.cameraMatrix(), mCamera.projectionMatrix(), mCameraObject.transformation().translation() );
+    //mNodeEditor.Draw( mCamera.cameraMatrix(), mCamera.projectionMatrix(), mCameraObject.transformation().translation() );
+    mNodeEditor.DrawNodeEditor();
 
     /* Set appropriate states. If you only draw ImGui, it is sufficient to
        just enable blending and scissor test in the constructor. */

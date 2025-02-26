@@ -611,7 +611,21 @@ void FastNoiseNodeEditor::Draw( const Matrix4& transformation, const Matrix4& pr
 
     ImGui::SetNextWindowSize( ImVec2( 963, 634 ), ImGuiCond_FirstUseEver );
     ImGui::SetNextWindowPos( ImVec2( 8, 439 ), ImGuiCond_FirstUseEver );
-    if( ImGui::Begin( "Node Editor" ) )
+    DrawNodeEditor();
+
+    DoNodeBenchmarks();
+
+    mNoiseTexture.Draw();
+
+    mMeshNoisePreview.Draw( transformation, projection, cameraPosition );
+}
+
+void FastNoiseNodeEditor::DrawNodeEditor()
+{
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    if( ImGui::Begin("Node Editor", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize) )
     {
         UpdateSelected();
 
@@ -633,12 +647,6 @@ void FastNoiseNodeEditor::Draw( const Matrix4& transformation, const Matrix4& pr
             {
                 node.second.generateAverages.clear();
             }
-        }
-        if( ImGui::IsItemHovered() )
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextUnformatted( "Disable \"Generate Mesh Preview\" for more accurate results" );
-            ImGui::EndTooltip();
         }
 
         ImGui::PopItemWidth();
@@ -672,17 +680,16 @@ void FastNoiseNodeEditor::Draw( const Matrix4& transformation, const Matrix4& pr
 #endif
 
         ImNodes::EndNodeEditor();
+        if( ImNodes::IsEditorHovered() && ImGui::GetIO().MouseWheel != 0 )
+        {
+            float zoom = ImNodes::EditorContextGetZoom() + ImGui::GetIO().MouseWheel * 0.1f;
+            ImNodes::EditorContextSetZoom( zoom, ImGui::GetMousePos() );
+        }
 
         CheckLinks();
 
     }
     ImGui::End();
-
-    DoNodeBenchmarks();
-
-    mNoiseTexture.Draw();
-
-    mMeshNoisePreview.Draw( transformation, projection, cameraPosition );
 }
 
 void FastNoiseNodeEditor::CheckLinks()

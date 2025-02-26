@@ -23,6 +23,7 @@ namespace Magnum
     public:
         FastNoiseNodeEditor();
         void Draw( const Matrix4& transformation, const Matrix4& projection, const Vector3& cameraPosition );
+        void DrawNodeEditor();
         void SetSIMDLevel( FastSIMD::eLevel lvl );
 
         static const char* GetSIMDLevelName( FastSIMD::eLevel lvl );
