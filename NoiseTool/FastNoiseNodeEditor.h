@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <climits>
+#include <optional>
 
 #include <Magnum/Magnum.h>
 #include <Magnum/GL/GL.h>
@@ -28,7 +29,6 @@ namespace Magnum
 
         static const char* GetSIMDLevelName( FastSIMD::eLevel lvl );
 
-    private:
         struct Node
         {
             Node( FastNoiseNodeEditor& editor, FastNoise::NodeData* nodeData, bool generatePreview = true, int id = 0 );
@@ -70,6 +70,9 @@ namespace Magnum
             GL::Texture2D noiseTexture;
         };
 
+        const Node* GetSelectedNode() const;
+
+    private:
         struct MetadataMenu
         {
             virtual ~MetadataMenu() = default;

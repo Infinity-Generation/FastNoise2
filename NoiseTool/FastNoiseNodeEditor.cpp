@@ -692,6 +692,19 @@ void FastNoiseNodeEditor::DrawNodeEditor()
     ImGui::End();
 }
 
+const Magnum::FastNoiseNodeEditor::Node* FastNoiseNodeEditor::GetSelectedNode() const
+{
+    if( mSelectedNode )
+    {
+        auto find = mNodes.find( mSelectedNode );
+        if( find != mNodes.end() )
+        {
+            return &find->second;
+        }
+    }
+    return nullptr;
+}
+
 void FastNoiseNodeEditor::CheckLinks()
 {
     // Check for new links
