@@ -187,6 +187,9 @@ void FastNoiseNodeEditor::Node::GeneratePreview( bool nodeTreeChanged, bool benc
 
         // Save nodes to ini
         ImGuiExtra::MarkSettingsDirty();
+
+        // Mark editor as edited
+        editor.mEdited = true;
     }
 }
 
@@ -622,6 +625,8 @@ void FastNoiseNodeEditor::Draw( const Matrix4& transformation, const Matrix4& pr
 
 void FastNoiseNodeEditor::DrawNodeEditor()
 {
+    mEdited = false;
+
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -703,6 +708,11 @@ const Magnum::FastNoiseNodeEditor::Node* FastNoiseNodeEditor::GetSelectedNode() 
         }
     }
     return nullptr;
+}
+
+bool FastNoiseNodeEditor::Edited() const
+{
+    return mEdited;
 }
 
 void FastNoiseNodeEditor::CheckLinks()
@@ -845,6 +855,13 @@ void FastNoiseNodeEditor::SetSIMDLevel( FastSIMD::eLevel lvl )
     }
 
     ChangeSelectedNode( mSelectedNode );
+}
+
+void FastNoiseNodeEditor::SetFromEncodedNodeTree(const std::string& encoded)
+{
+    mNodes.clear();
+    mSelectedNode = nullptr;
+    AddNodeFromEncodedString(encoded.c_str(), ImNodes::EditorContextGetPanning());
 }
 
 void FastNoiseNodeEditor::DoNodes()

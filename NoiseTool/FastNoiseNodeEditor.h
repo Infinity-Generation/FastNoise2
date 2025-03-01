@@ -26,6 +26,7 @@ namespace Magnum
         void Draw( const Matrix4& transformation, const Matrix4& projection, const Vector3& cameraPosition );
         void DrawNodeEditor();
         void SetSIMDLevel( FastSIMD::eLevel lvl );
+        void SetFromEncodedNodeTree(const std::string& encoded);
 
         static const char* GetSIMDLevelName( FastSIMD::eLevel lvl );
 
@@ -71,6 +72,7 @@ namespace Magnum
         };
 
         const Node* GetSelectedNode() const;
+        bool Edited() const;
 
     private:
         struct MetadataMenu
@@ -120,6 +122,8 @@ namespace Magnum
         void DoContextMenu();
         void DoNodes();
         void UpdateSelected();
+
+        bool mEdited = false;
 
         std::unordered_map<FastNoise::NodeData*, Node> mNodes;
         FastNoise::NodeData* mDroppedLinkNode = nullptr;
