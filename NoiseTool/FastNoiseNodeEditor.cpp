@@ -641,9 +641,11 @@ void FastNoiseNodeEditor::DrawNodeEditor()
         edited |= ImGuiExtra::ScrollCombo( reinterpret_cast<int*>( &mNodeGenType ), NoiseTexture::GenType_Count ); 
         ImGui::SameLine();  
 
-        edited |= ImGui::DragInt( "Seed", &mNodeSeed );
+        edited |= ImGui::DragInt( "Preview Seed", &mNodeSeed );
         ImGui::SameLine();
-        edited |= ImGui::DragFloat( "Frequency", &mNodeFrequency, 0.001f );    
+        bool freqChanged = ImGui::DragFloat( "Frequency", &mNodeFrequency, 0.000001f );
+        edited |= freqChanged;
+        mEdited |= freqChanged;
         ImGui::SameLine();    
 
         if( ImGui::Button( "Retest Node Performance" ) )
