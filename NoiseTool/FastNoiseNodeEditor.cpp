@@ -697,6 +697,16 @@ void FastNoiseNodeEditor::DrawNodeEditor()
     ImGui::End();
 }
 
+float FastNoiseNodeEditor::Frequency() const
+{
+    return mNodeFrequency;
+}
+
+int FastNoiseNodeEditor::Seed() const
+{
+    return mNodeSeed;
+}
+
 const Magnum::FastNoiseNodeEditor::Node* FastNoiseNodeEditor::GetSelectedNode() const
 {
     if( mSelectedNode )

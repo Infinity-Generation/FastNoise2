@@ -71,6 +71,8 @@ namespace Magnum
             GL::Texture2D noiseTexture;
         };
 
+        float Frequency() const;
+        int Seed() const;
         const Node* GetSelectedNode() const;
         bool Edited() const;
 
