@@ -1,7 +1,7 @@
 CPMAddPackage(
     NAME corrade
     GITHUB_REPOSITORY mosra/corrade
-    GIT_TAG dfbeae5c4a2ee429ecad3a37121aba3e3d389036
+    GIT_TAG f37591439479a5169134f8f2eba551b95054057a
     GIT_SUBMODULES "src"
     EXCLUDE_FROM_ALL YES
     OPTIONS
