@@ -349,6 +349,7 @@ namespace FastNoise
                 {
                     float32v distSqr = dX * dX;
                     ((distSqr = FS_FMulAdd_f32( d, d, distSqr )), ...);
+                    distSqr += float32v(1e-8f);
 
                     return FS_InvSqrt_f32( distSqr ) * distSqr;
                 }

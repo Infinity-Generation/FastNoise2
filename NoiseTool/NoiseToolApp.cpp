@@ -44,7 +44,7 @@ NoiseToolApp::NoiseToolApp( const Arguments& arguments ) :
         ImGui::GetIO().Fonts->AddFontFromMemoryTTF( const_cast<char*>( font.data() ), (int)font.size(), 14.0f * framebufferSize().x() / size.x(), &fontConfig );
     }
 
-    ImGui::GetIO().IniFilename = "NoiseTool.ini";
+    ImGui::GetIO().IniFilename = NULL;
     mImGuiIntegrationContext = ImGuiIntegration::Context( *mImGuiContext, size, windowSize(), framebufferSize() );
 
     GL::Renderer::enable( GL::Renderer::Feature::DepthTest );
