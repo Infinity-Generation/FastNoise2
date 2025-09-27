@@ -27,6 +27,7 @@ namespace Magnum
         void DrawNodeEditor();
         void SetSIMDLevel( FastSIMD::eLevel lvl );
         void SetFromEncodedNodeTree(const std::string& encoded);
+        void SetFrequency( float frequency );
 
         static const char* GetSIMDLevelName( FastSIMD::eLevel lvl );
 

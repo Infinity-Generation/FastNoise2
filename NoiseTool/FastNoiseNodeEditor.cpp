@@ -97,9 +97,15 @@ static bool DoHoverPopup( const char* format, T... args )
             return false;
         }
 
+        // Apply zoom compensation for tooltips
+        float zoom = ImNodes::EditorContextGetZoom();
+        float inv_zoom = 1.0f / zoom;
+        
         ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 4.f, 4.f ) );
         ImGui::BeginTooltip();
+        ImGui::SetWindowFontScale(inv_zoom);
         ImGui::TextUnformatted( hoverTxt.c_str() );
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::EndTooltip();
         ImGui::PopStyleVar();
         return true;
@@ -184,9 +190,6 @@ void FastNoiseNodeEditor::Node::GeneratePreview( bool nodeTreeChanged, bool benc
         {
             editor.ChangeSelectedNode( data.get() );
         }
-
-        // Save nodes to ini
-        ImGuiExtra::MarkSettingsDirty();
 
         // Mark editor as edited
         editor.mEdited = true;
@@ -283,6 +286,7 @@ const FastNoise::Metadata* FastNoiseNodeEditor::MetadataMenuItem::DrawUI( std::f
     {
         return metadata;
     }
+
     return nullptr;
 }
 
@@ -301,8 +305,11 @@ bool FastNoiseNodeEditor::MetadataMenuGroup::CanDraw( std::function<bool( const 
 const FastNoise::Metadata* FastNoiseNodeEditor::MetadataMenuGroup::DrawUI( std::function<bool( const FastNoise::Metadata* )> isValid, bool drawGroups ) const
 {
     const FastNoise::Metadata* returnPressed = nullptr;
-
     bool doGroup = drawGroups && name[0] != 0;
+
+    float zoom = ImNodes::EditorContextGetZoom();
+    float inv_zoom = 1.0f / zoom;
+    ImGui::SetWindowFontScale(inv_zoom);
 
     if( !doGroup || ImGui::BeginMenu( name ) )
     {
@@ -321,6 +328,9 @@ const FastNoise::Metadata* FastNoiseNodeEditor::MetadataMenuGroup::DrawUI( std::
             ImGui::EndMenu();
         }
     }
+
+    ImGui::SetWindowFontScale(1.0f);
+    
     return returnPressed;
 }
 
@@ -637,15 +647,17 @@ void FastNoiseNodeEditor::DrawNodeEditor()
         bool edited = false;
         ImGui::PushItemWidth( 82.0f );
         
-        edited |= ImGui::Combo( "Preview Type", reinterpret_cast<int*>( &mNodeGenType ), NoiseTexture::GenTypeStrings );
-        edited |= ImGuiExtra::ScrollCombo( reinterpret_cast<int*>( &mNodeGenType ), NoiseTexture::GenType_Count ); 
-        ImGui::SameLine();  
-
-        edited |= ImGui::DragInt( "Preview Seed", &mNodeSeed );
+        ImGui::Text("Preview Type");
         ImGui::SameLine();
-        bool freqChanged = ImGui::DragFloat( "Frequency", &mNodeFrequency, 0.000001f, 0.0f, 0.0f, "%.6f");
-        edited |= freqChanged;
-        mEdited |= freqChanged;
+        edited |= ImGui::Combo( "##Preview_Type", reinterpret_cast<int*>( &mNodeGenType ), NoiseTexture::GenTypeStrings );
+        edited |= ImGuiExtra::ScrollCombo( reinterpret_cast<int*>( &mNodeGenType ), NoiseTexture::GenType_Count ); 
+        ImGui::SameLine();
+        ImGui::Text("Preview Seed");
+        ImGui::SameLine();
+        edited |= ImGui::DragInt( "##Preview_Seed", &mNodeSeed );
+
+        ImGui::SameLine();
+        DoHelp();
 
         ImGui::PopItemWidth();
         
@@ -655,13 +667,9 @@ void FastNoiseNodeEditor::DrawNodeEditor()
             {
                 node.second.GeneratePreview( false );
             }
-
-            ImGuiExtra::MarkSettingsDirty();
         }                
 
         ImNodes::BeginNodeEditor();
-        
-        DoHelp();
 
         DoContextMenu();
 
@@ -867,6 +875,19 @@ void FastNoiseNodeEditor::SetFromEncodedNodeTree(const std::string& encoded)
     AddNodeFromEncodedString(encoded.c_str(), ImNodes::EditorContextGetPanning());
 }
 
+void FastNoiseNodeEditor::SetFrequency( float frequency )
+{
+    if( mNodeFrequency != frequency )
+    {
+        mNodeFrequency = frequency;
+
+        for( auto& node : mNodes )
+        {
+            node.second.GeneratePreview( false );
+        }
+    }
+}
+
 void FastNoiseNodeEditor::DoNodes()
 {
     for( auto& node : mNodes )
@@ -889,8 +910,15 @@ void FastNoiseNodeEditor::DoNodes()
 
         if( ImGui::IsItemHovered() )
         {
+            float zoom = ImNodes::EditorContextGetZoom();
+            float inv_zoom = 1.0f / zoom;
+            
             ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 4.f, 4.f ) );
-            ImGui::SetTooltip( "Total: %s", TimeWithUnits( node.second.totalGenerateNs ).c_str() );            
+            ImGui::BeginTooltip();
+            ImGui::SetWindowFontScale(inv_zoom);
+            ImGui::Text( "Total: %s", TimeWithUnits( node.second.totalGenerateNs ).c_str() );
+            ImGui::SetWindowFontScale(1.0f);
+            ImGui::EndTooltip();
             ImGui::PopStyleVar();
         }
 
@@ -900,6 +928,11 @@ void FastNoiseNodeEditor::DoNodes()
         ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 4, 4 ) );
         if( ImGui::BeginPopupContextItem() )
         {
+            // Apply zoom compensation for node context menu
+            float zoom = ImNodes::EditorContextGetZoom();
+            float inv_zoom = 1.0f / zoom;
+            ImGui::SetWindowFontScale(inv_zoom);
+
             if( ImGui::MenuItem( "Copy Encoded Node Tree" ) )
             {
                 ImGui::SetClipboardText( node.second.serialised.c_str() );
@@ -957,6 +990,8 @@ void FastNoiseNodeEditor::DoNodes()
                 node.second.GeneratePreview();
             }
 
+            // Reset font scale before ending popup
+            ImGui::SetWindowFontScale(1.0f);
             ImGui::EndPopup();
         }
         ImGui::PopStyleVar();
@@ -1160,6 +1195,10 @@ void FastNoiseNodeEditor::DoHelp()
 
 void FastNoiseNodeEditor::DoContextMenu()
 {
+    // Get the current zoom level and calculate inverse for compensation
+    float zoom = ImNodes::EditorContextGetZoom();
+    float inv_zoom = 1.0f / zoom;
+    
     std::string className;
     ImVec2 drag = ImGui::GetMouseDragDelta( ImGuiMouseButton_Right );
     float distance = sqrtf( ImDot( drag, drag ) );
@@ -1175,6 +1214,8 @@ void FastNoiseNodeEditor::DoContextMenu()
             AddNode( mContextStartPos, newMetadata );
         }
 
+        ImGui::SetWindowFontScale(inv_zoom);
+
         if( ImGui::BeginMenu( "Import" ) )
         {
             if( ImGui::MenuItem( "Encoded Node Tree" ) )
@@ -1189,9 +1230,11 @@ void FastNoiseNodeEditor::DoContextMenu()
                     AddNodeFromEncodedString( gDemoNodeTrees[i][1], mContextStartPos );
                 }
             }
+            
             ImGui::EndMenu();
         }
 
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::EndPopup();
     }
 
@@ -1209,6 +1252,8 @@ void FastNoiseNodeEditor::DoContextMenu()
 
     if( ImGui::BeginPopupModal( "New From Encoded Node Tree", &mImportNodeModal, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings ) )
     {
+        ImGui::SetWindowFontScale(inv_zoom);
+        
         if( openImportModal )
         {
             ImGui::SetKeyboardFocusHere();
@@ -1227,6 +1272,8 @@ void FastNoiseNodeEditor::DoContextMenu()
                 mImportNodeString = "DESERIALISATION FAILED";
             }
         }
+        
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::EndPopup();
     }
     ImGui::PopStyleVar( 2 );
@@ -1236,8 +1283,10 @@ void FastNoiseNodeEditor::DoContextMenu()
         ImGui::OpenPopup( "new_node_drop" );
         mDroppedLink = false;
     }
+    
+    // Set font scale BEFORE BeginPopup for the dropped link menu
     if( ImGui::BeginPopup( "new_node_drop", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings ) )
-    {
+    {   
         ImVec2 startPos = ImGui::GetMousePosOnOpeningCurrentPopup();
 
         auto newMetadata = mContextMetadata.front()->DrawUI( []( const FastNoise::Metadata* metadata )
@@ -1248,7 +1297,6 @@ void FastNoiseNodeEditor::DoContextMenu()
         if( newMetadata )
         {
             auto& newNode = AddNode( startPos, newMetadata );
-
             newNode.GetNodeLink( 0 ) = mDroppedLinkNode;
             newNode.GeneratePreview();
         }
