@@ -543,7 +543,8 @@ FastNoiseNodeEditor::FastNoiseNodeEditor() :
     mNodeBenchmarkMax = 1;
 #endif
     
-    SetupSettingsHandlers();
+    // Disable saving/restoring settings for window embedding
+    // SetupSettingsHandlers();
 
     // Create Metadata context menu tree
     std::unordered_map<std::string, MetadataMenuGroup*> groupMap;
