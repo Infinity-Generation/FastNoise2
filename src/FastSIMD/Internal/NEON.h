@@ -293,10 +293,19 @@ namespace FastSIMD
         }
 
         // Gather
+        // Matches SSE/AVX/Scalar semantics: `offsets` holds 4 independent
+        // BYTE offsets (one per lane). Loads one float per lane from
+        // `base + offsets[lane]`.
 
         FS_INLINE static float32v Gather_f32( void const* base, int32v offsets )
         {
-            return vld1q_f32( reinterpret_cast<float const*>(base) + vgetq_lane_s32( offsets, 0 ) );
+            const uint8_t* basePtr = reinterpret_cast<const uint8_t*>( base );
+            float32x4_t r = vdupq_n_f32( 0.0f );
+            r = vld1q_lane_f32( reinterpret_cast<const float*>( basePtr + vgetq_lane_s32( offsets, 0 ) ), r, 0 );
+            r = vld1q_lane_f32( reinterpret_cast<const float*>( basePtr + vgetq_lane_s32( offsets, 1 ) ), r, 1 );
+            r = vld1q_lane_f32( reinterpret_cast<const float*>( basePtr + vgetq_lane_s32( offsets, 2 ) ), r, 2 );
+            r = vld1q_lane_f32( reinterpret_cast<const float*>( basePtr + vgetq_lane_s32( offsets, 3 ) ), r, 3 );
+            return r;
         }
 
         // Store
@@ -332,8 +341,14 @@ namespace FastSIMD
         
         FS_INLINE static int32v Convertf32_i32( float32v a )
         {
+        #ifdef FASTSIMD_USE_ARMV7
+            // ARMv7 has no round-to-nearest convert intrinsic; pre-round then truncate.
             return vcvtq_s32_f32( Round_f32(a) );
-        }        
+        #else
+            // ARMv8 has a direct round-to-nearest-even convert (matches _mm_cvtps_epi32).
+            return vcvtnq_s32_f32( a );
+        #endif
+        }
 
         // Comparisons
 
@@ -589,6 +604,20 @@ namespace FastSIMD
         FS_INLINE static int32_t Extract0_i32( int32v a )
         {
             return vgetq_lane_s32(a, 0);
+        }
+
+        FS_INLINE static float Extract_f32( float32v a, size_t idx )
+        {
+            alignas(16) float f[4];
+            vst1q_f32( f, a );
+            return f[idx & 3];
+        }
+
+        FS_INLINE static int32_t Extract_i32( int32v a, size_t idx )
+        {
+            alignas(16) int32_t i[4];
+            vst1q_s32( i, a );
+            return i[idx & 3];
         }
 
         FS_INLINE static float32v Reciprocal_f32( float32v a )

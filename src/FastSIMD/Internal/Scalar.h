@@ -260,7 +260,8 @@ namespace FastSIMD
 
         FS_INLINE static float32v Gather_f32( void const* base, int32v offsets )
         {
-            return *reinterpret_cast<float32v const*>(reinterpret_cast<float const*>(base) + offsets);
+            // Match SSE/AVX semantics: `offsets` is a BYTE offset.
+            return *reinterpret_cast<float const*>(reinterpret_cast<const uint8_t*>(base) + offsets);
         }
 
         // Store
