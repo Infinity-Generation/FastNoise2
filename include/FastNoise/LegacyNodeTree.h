@@ -53,5 +53,21 @@ namespace FastNoise
          *          is not a complete, valid legacy tree (trailing bytes included).
          */
         FASTNOISE_API std::string ConvertEncodedNodeTree( const char* legacyEncodedNodeTree, std::vector<std::string>* notes = nullptr );
+
+        /** @brief Whether a string of unknown origin is a pre-1.0 encoded node tree.
+         *
+         *  For callers that cannot know which format a string is in. The formats
+         *  overlap: the current decoder accepts about half of all pre-1.0 strings
+         *  as some other tree, and a few current strings parse as complete pre-1.0
+         *  trees. This returns true only for a complete pre-1.0 tree that is not
+         *  also a current one, which is decided by two facts about the current
+         *  writer: its Base64 contains '@' (a run of 'A's) where the old one never
+         *  did, and its output is canonical, so a string it wrote decodes and
+         *  encodes back to itself.
+         *
+         *  A caller that knows the format should not use this: a current string
+         *  that is also a valid pre-1.0 tree can still be misjudged.
+         */
+        FASTNOISE_API bool IsEncodedNodeTree( const char* encodedNodeTree );
     }
 }

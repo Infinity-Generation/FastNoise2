@@ -816,6 +816,38 @@ namespace
     };
 }
 
+bool FastNoise::Legacy::IsEncodedNodeTree( const char* encodedNodeTree )
+{
+    if( !encodedNodeTree || !*encodedNodeTree )
+    {
+        return false;
+    }
+
+    // The current writer compresses runs of 'A' into '@'; the old one used the
+    // plain Base64 alphabet.
+    if( std::strchr( encodedNodeTree, '@' ) )
+    {
+        return false;
+    }
+
+    try
+    {
+        LegacyReader reader( Base64::Decode( encodedNodeTree ) );
+        reader.ReadTree();
+    }
+    catch( const ConversionError& )
+    {
+        return false;
+    }
+
+    // The current writer is canonical: a string it wrote decodes and encodes
+    // back to itself. A pre-1.0 string the current decoder happens to accept
+    // does not.
+    std::vector<std::unique_ptr<NodeData>> nodeData;
+    NodeData* current = Metadata::DeserialiseNodeData( encodedNodeTree, nodeData );
+    return !current || Metadata::SerialiseNodeData( current ) != encodedNodeTree;
+}
+
 std::string FastNoise::Legacy::ConvertEncodedNodeTree( const char* legacyEncodedNodeTree, std::vector<std::string>* notes )
 {
     if( !legacyEncodedNodeTree || !*legacyEncodedNodeTree )
