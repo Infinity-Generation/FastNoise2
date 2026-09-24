@@ -230,6 +230,38 @@ FASTNOISE_API void fnGenPositionArray4D( const void* node, float* noiseOut, int 
                                          float xOffset, float yOffset, float zOffset, float wOffset,
                                          int seed, float* outputMinMax /*nullptr or float[2]*/ );
 
+/** @brief Generate noise at arbitrary 2D positions stored interleaved.
+ *
+ *  Same as fnGenPositionArray2D, but reads positions from one array laid out as
+ *  `x0, y0, x1, y1, ...`. Reads exactly `count * 2` floats.
+ *
+ *  @param node         Node handle (must be the root of the node tree).
+ *  @param noiseOut     Pre-allocated output array. Must hold at least @p count floats.
+ *  @param count        Number of positions to generate.
+ *  @param posArray     Interleaved positions in world space (length >= `count * 2`).
+ *  @param seed         Seed value for the noise.
+ *  @param outputMinMax Optional float[2] to receive {min, max} of generated values. Pass NULL to skip.
+ */
+FASTNOISE_API void fnGenStridedArray2D( const void* node, float* noiseOut, int count,
+                                        const float* posArray,
+                                        int seed, float* outputMinMax /*nullptr or float[2]*/ );
+
+/** @brief Generate noise at arbitrary 3D positions stored interleaved (`x0, y0, z0, x1, ...`).
+ *
+ *  Reads exactly `count * 3` floats. See fnGenStridedArray2D.
+ */
+FASTNOISE_API void fnGenStridedArray3D( const void* node, float* noiseOut, int count,
+                                        const float* posArray,
+                                        int seed, float* outputMinMax /*nullptr or float[2]*/ );
+
+/** @brief Generate noise at arbitrary 4D positions stored interleaved (`x0, y0, z0, w0, x1, ...`).
+ *
+ *  Reads exactly `count * 4` floats. See fnGenStridedArray2D.
+ */
+FASTNOISE_API void fnGenStridedArray4D( const void* node, float* noiseOut, int count,
+                                        const float* posArray,
+                                        int seed, float* outputMinMax /*nullptr or float[2]*/ );
+
 /** @brief Generate seamlessly tileable 2D noise.
  *
  *  Produces a 2D noise image that tiles perfectly when repeated in both X and Y.

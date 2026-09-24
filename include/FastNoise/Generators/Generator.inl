@@ -349,6 +349,21 @@ public:
         return StoreRemaining<true>( noiseOut, count, index, min, max, gen );
     }
 
+    FastNoise::OutputMinMax GenStridedArray2D( float* noiseOut, int count, const Vector2* posArray, int seed ) const final
+    {
+        return GenStridedArray( noiseOut, count, posArray, seed );
+    }
+
+    FastNoise::OutputMinMax GenStridedArray3D( float* noiseOut, int count, const Vector3* posArray, int seed ) const final
+    {
+        return GenStridedArray( noiseOut, count, posArray, seed );
+    }
+
+    FastNoise::OutputMinMax GenStridedArray4D( float* noiseOut, int count, const Vector4* posArray, int seed ) const final
+    {
+        return GenStridedArray( noiseOut, count, posArray, seed );
+    }
+
     float GenSingle2D( float x, float y, int seed ) const final
     {
         ScopeExitx86ZeroUpper zeroUpper;
@@ -455,7 +470,86 @@ private:
         }
     }
 
-    static FS_FORCEINLINE float32v LoadRemaining( const float* loadPtr, intptr_t totalValues, intptr_t index )        
+    // Positions are copied lane by lane into per-axis registers, so the only
+    // elements read are the `laneCount` that exist. A partial register's unused
+    // lanes are zeroed rather than left indeterminate; StoreRemaining never
+    // writes them out.
+    template<typename VECTOR>
+    FS_FORCEINLINE float32v GenStridedRegister( int seed, const VECTOR* posArray, intptr_t laneCount ) const
+    {
+        static constexpr size_t kDimensions = sizeof( VECTOR ) / sizeof( float );
+        static_assert( sizeof( VECTOR ) == kDimensions * sizeof( float ), "Strided position types must be tightly packed floats" );
+
+        alignas( float32v ) float lanes[kDimensions][float32v::ElementCount];
+        const float* source = reinterpret_cast<const float*>( posArray );
+
+        for( intptr_t lane = 0; lane < laneCount; lane++ )
+        {
+            for( size_t dimension = 0; dimension < kDimensions; dimension++ )
+            {
+                lanes[dimension][lane] = source[lane * kDimensions + dimension];
+            }
+        }
+        for( intptr_t lane = laneCount; lane < (intptr_t)float32v::ElementCount; lane++ )
+        {
+            for( size_t dimension = 0; dimension < kDimensions; dimension++ )
+            {
+                lanes[dimension][lane] = 0.0f;
+            }
+        }
+
+        if constexpr( kDimensions == 2 )
+        {
+            return Gen( int32v( seed ), FS::Load<float32v>( lanes[0] ), FS::Load<float32v>( lanes[1] ) );
+        }
+        else if constexpr( kDimensions == 3 )
+        {
+            return Gen( int32v( seed ), FS::Load<float32v>( lanes[0] ), FS::Load<float32v>( lanes[1] ), FS::Load<float32v>( lanes[2] ) );
+        }
+        else
+        {
+            static_assert( kDimensions == 4, "Strided positions must have 2, 3 or 4 dimensions" );
+            return Gen( int32v( seed ), FS::Load<float32v>( lanes[0] ), FS::Load<float32v>( lanes[1] ), FS::Load<float32v>( lanes[2] ), FS::Load<float32v>( lanes[3] ) );
+        }
+    }
+
+    template<typename VECTOR>
+    FS_FORCEINLINE FastNoise::OutputMinMax GenStridedArray( float* noiseOut, int count, const VECTOR* posArray, int seed ) const
+    {
+        ScopeExitx86ZeroUpper zeroUpper;
+
+        if( count <= 0 )
+        {
+            return {};
+        }
+
+        float32v min( kInfinity );
+        float32v max( -kInfinity );
+
+        intptr_t index = 0;
+        while( index < count - (intptr_t)int32v::ElementCount )
+        {
+            float32v gen = GenStridedRegister( seed, &posArray[index], int32v::ElementCount );
+            FS::Store( &noiseOut[index], gen );
+
+#if FASTNOISE_CALC_MIN_MAX
+            min = FS::Min( min, gen );
+            max = FS::Max( max, gen );
+#endif
+            index += int32v::ElementCount;
+        }
+
+        // Same tail as GenPositionArray: fewer positions than one register are
+        // read as they are; otherwise the last full register's worth is read
+        // again, overlapping the previous one, so every read stays in bounds.
+        float32v gen = index == 0
+            ? GenStridedRegister( seed, posArray, count )
+            : GenStridedRegister( seed, &posArray[count - (intptr_t)int32v::ElementCount], int32v::ElementCount );
+
+        return StoreRemaining<true>( noiseOut, count, index, min, max, gen );
+    }
+
+    static FS_FORCEINLINE float32v LoadRemaining( const float* loadPtr, intptr_t totalValues, intptr_t index )
     {
         if( index == 0 )
         {

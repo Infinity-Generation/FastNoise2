@@ -383,8 +383,44 @@ namespace FastNoise
          *  @return The min and max noise values written to @p out.
          */
         virtual OutputMinMax GenPositionArray4D( float* out, int count,
-            const float* xPosArray, const float* yPosArray, const float* zPosArray, const float* wPosArray, 
+            const float* xPosArray, const float* yPosArray, const float* zPosArray, const float* wPosArray,
             float xOffset, float yOffset, float zOffset, float wOffset, int seed ) const = 0;
+
+        /** @brief Tightly packed position types read by the GenStridedArray methods. */
+        struct Vector2 { float x; float y; };
+        struct Vector3 { float x; float y; float z; };                ///< @copydoc Vector2
+        struct Vector4 { float x; float y; float z; float w; };       ///< @copydoc Vector2
+
+        /** @brief Generate noise at arbitrary 2D positions stored interleaved.
+         *
+         *  Same as GenPositionArray2D, but reads positions from one array of (x, y)
+         *  pairs, so a caller whose positions are already packed (mesh vertices,
+         *  particles) needs no separate per-axis copy. Positions are used as given;
+         *  there are no offset parameters.
+         *
+         *  Reads exactly @p count elements of @p posArray: nothing past its end is
+         *  touched, whatever @p count is.
+         *
+         *  @param[out] out       Pre-allocated output array. Must hold at least @p count floats.
+         *  @param      count     Number of positions to generate.
+         *  @param      posArray  Positions in world space (length >= @p count).
+         *  @param      seed      Seed value for the noise.
+         *  @return The min and max noise values written to @p out.
+         */
+        virtual OutputMinMax GenStridedArray2D( float* out, int count,
+            const Vector2* posArray, int seed ) const = 0;
+
+        /** @brief Generate noise at arbitrary 3D positions stored interleaved.
+         *  @copydetails GenStridedArray2D
+         */
+        virtual OutputMinMax GenStridedArray3D( float* out, int count,
+            const Vector3* posArray, int seed ) const = 0;
+
+        /** @brief Generate noise at arbitrary 4D positions stored interleaved.
+         *  @copydetails GenStridedArray2D
+         */
+        virtual OutputMinMax GenStridedArray4D( float* out, int count,
+            const Vector4* posArray, int seed ) const = 0;
 
         /** @brief Generate a single 2D noise value at a specific position. VERY SLOW!!!
          *
