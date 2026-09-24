@@ -286,7 +286,9 @@ namespace FastNoise
     protected:
         GeneratorSource mSource;
         HybridSource mMinkowskiP = 1.5f;
-        DistanceFunction mDistanceFunction = DistanceFunction::EuclideanSquared;
+        // Must equal the metadata default below: an encoded tree omits a member
+        // whose value is its metadata default, and decoding leaves it at this one.
+        DistanceFunction mDistanceFunction = DistanceFunction::Euclidean;
         PerDimensionVariable<HybridSource> mPoint = 0.0f;
 
         template<typename T>
